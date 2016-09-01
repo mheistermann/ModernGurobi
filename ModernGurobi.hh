@@ -18,6 +18,7 @@ extern "C" {
 
 
 class Model;
+class AffineConstraint;
 
 class GurobiException : public std::runtime_error
 {
@@ -70,7 +71,7 @@ protected:
 
 private:
     friend class Model;
-    friend class LinearConstraint;
+    friend class AffineConstraint;
     void set(double solution) {
         computed = true;
         solution_ = solution;
@@ -88,6 +89,7 @@ using VarPtr = std::shared_ptr<Var>;
 class LinearExpr {
 public:
     LinearExpr(VarPtr v): coeffmap_{{v, 1}} {}
+    static LinearExpr zero() { return LinearExpr(); }
     LinearExpr& operator*=(double d) {
         for(auto entry: coeffmap_) { entry.second *=d; }
         return *this;
@@ -109,10 +111,10 @@ public:
     }
 
 private:
+    friend class AffineConstraint;
     LinearExpr() {}
     LinearExpr(VarPtr v, double d): coeffmap_{{v,d}} {}
 
-    friend class LinearConstraint;
     friend LinearExpr operator+(LinearExpr x, const LinearExpr& y);
     friend LinearExpr operator-(LinearExpr x, const LinearExpr& y);
     friend LinearExpr operator*(const LinearExpr &x, double d);
@@ -129,6 +131,45 @@ LinearExpr operator-(LinearExpr x, const LinearExpr& y);
 LinearExpr operator*(const LinearExpr &x, double d);
 LinearExpr operator*(double d, const LinearExpr& x);
 
+class AffineExpr {
+public:
+    AffineExpr(double d)
+        : linPart_(LinearExpr::zero()),
+          constant_(d)
+    {}
+    AffineExpr(int i) // just for convenient auto-conversion
+        : AffineExpr(static_cast<double>(i))
+    {}
+    AffineExpr(LinearExpr lin)
+        : linPart_(lin),
+          constant_(0)
+    {}
+private:
+    friend class AffineConstraint;
+    friend AffineExpr operator+(AffineExpr x, const AffineExpr& y);
+    friend AffineExpr operator-(AffineExpr x, const AffineExpr& y);
+    friend AffineExpr operator*(AffineExpr expr, double d);
+    friend AffineExpr operator*(double d, AffineExpr expr);
+
+    friend AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
+    friend AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
+    friend AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
+
+    const double &getConstant() const {return constant_; }
+    double &getConstant() {return constant_; }
+    const LinearExpr &getLinearPart() const { return linPart_; }
+    LinearExpr &getLinearPart() { return linPart_; }
+    LinearExpr linPart_;
+    double constant_;
+};
+
+AffineExpr operator+(AffineExpr x, const AffineExpr& y);
+AffineExpr operator-(AffineExpr x, const AffineExpr& y);
+AffineExpr operator*(AffineExpr expr, double d);
+AffineExpr operator*(double d, AffineExpr expr);
+
+
+
 
 class Constraint {
 public:
@@ -138,16 +179,13 @@ protected:
     virtual void add_to_model(GRBmodel *model) const = 0;
 };
 
-class LinearConstraint: public Constraint {
+class AffineConstraint: public Constraint {
 private:
-    friend LinearConstraint operator<=(const LinearExpr &expr, double rhs);
-    friend LinearConstraint operator<=(double lhs, const LinearExpr &expr);
-    friend LinearConstraint operator>=(const LinearExpr &expr, double rhs);
-    friend LinearConstraint operator>=(double lhs, const LinearExpr &expr);
-    friend LinearConstraint operator==(const LinearExpr &expr, double rhs);
-    friend LinearConstraint operator==(double lhs, const LinearExpr &expr);
+    friend AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
+    friend AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
+    friend AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
 
-    LinearConstraint(const LinearExpr &expr, char sense, double rhs)
+    AffineConstraint(const LinearExpr &expr, char sense, double rhs)
         : expr_(expr),
           sense_(sense),
           rhs_(rhs)
@@ -160,12 +198,9 @@ private:
     double rhs_;
 };
 
-LinearConstraint operator<=(const LinearExpr &expr, double rhs);
-LinearConstraint operator<=(double lhs, const LinearExpr &expr);
-LinearConstraint operator>=(const LinearExpr &expr, double rhs);
-LinearConstraint operator>=(double lhs, const LinearExpr &expr);
-LinearConstraint operator==(const LinearExpr &expr, double rhs);
-LinearConstraint operator==(double lhs, const LinearExpr &expr);
+AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
+AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
+AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
 
 class Model
 {

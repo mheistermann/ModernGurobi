@@ -21,25 +21,45 @@ LinearExpr operator*(const LinearExpr &x, double d)
 LinearExpr operator*(double d, const LinearExpr &x)
 { return x*d; }
 
-LinearConstraint operator<=(const LinearExpr &expr, double rhs)
-{ return LinearConstraint({expr, GRB_LESS_EQUAL, rhs}); }
+AffineExpr operator+(AffineExpr x, const AffineExpr& y) {
+    x.getLinearPart() += y.getLinearPart();
+    x.getConstant() += y.getConstant();
+    return x;
+}
 
-LinearConstraint operator<=(double lhs, const LinearExpr &expr)
-{ return expr >= lhs; }
+AffineExpr operator-(AffineExpr x, const AffineExpr& y) {
+    x.getLinearPart() -= y.getLinearPart();
+    x.getConstant() -= y.getConstant();
+    return x;
+}
 
-LinearConstraint operator>=(const LinearExpr &expr, double rhs)
-{ return LinearConstraint({expr, GRB_GREATER_EQUAL, rhs}); }
+AffineExpr operator*(AffineExpr expr, double d) {
+    expr.getLinearPart() *= d;
+    expr.getConstant() *= d;
+    return expr;
+}
 
-LinearConstraint operator>=(double lhs, const LinearExpr &expr)
-{ return expr <= lhs; }
+AffineExpr operator*(double d, AffineExpr expr) {
+    return expr * d;
+}
 
-LinearConstraint operator==(const LinearExpr &expr, double rhs)
-{ return LinearConstraint({expr, GRB_EQUAL, rhs}); }
+AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y) {
+    return AffineConstraint(x.getLinearPart()-y.getLinearPart(),
+                            GRB_LESS_EQUAL,
+                            y.getConstant() - x.getConstant());
+}
 
-LinearConstraint operator==(double lhs, const LinearExpr &expr)
-{ return expr == lhs; }
+AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y) {
+    return y <= x;
+}
 
-void LinearConstraint::add_to_model(GRBmodel *model) const {
+AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y) {
+    return AffineConstraint(x.getLinearPart()-y.getLinearPart(),
+                            GRB_EQUAL,
+                            y.getConstant() - x.getConstant());
+}
+
+void AffineConstraint::add_to_model(GRBmodel *model) const {
     std::vector<int> indices;
     std::vector<double> coeffs;
     const LinearExpr::CoeffMap &parts = expr_.coeffmap();
