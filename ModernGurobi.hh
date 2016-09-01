@@ -209,6 +209,10 @@ public:
         return vars_.back();
     }
 
+    VarPtr addBinaryVar(double obj, std::string vname="") {
+        return addVar(0, 1, obj, GRB_BINARY, vname);
+    }
+
     void addConstraint(const Constraint &constr)
     {
         constr.add_to_model(model_);
