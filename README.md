@@ -19,7 +19,7 @@ appreciate it if you would contribute your own extensions as pull requests.
 
 ## License
 
-ModernGurobi was written by Martin Heistermann <github()mheistermann.de>
+ModernGurobi was written by Martin Heistermann (github()mheistermann.de)
 and is available under the terms of the LGPL v3.
 
 If the LGPL is not acceptable for you, don't despair, just shoot me a mail and
