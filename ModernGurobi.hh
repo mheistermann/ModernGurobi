@@ -107,15 +107,21 @@ using VarPtr = std::shared_ptr<Var>;
 class LinearExpr {
 public:
     LinearExpr(VarPtr v): coeffmap_{{v, 1}} {}
+    /**
+     * @brief LinearExpr default constructor: value is 0
+     */
+    LinearExpr() {}
     static LinearExpr zero() { return LinearExpr(); }
     LinearExpr& operator*=(double d) {
         for(auto entry: coeffmap_) { entry.second *=d; }
         return *this;
     }
 
-    LinearExpr& operator-(const ModernGurobi::LinearExpr &y) {
-        for(auto entry: coeffmap_) { entry.second = -entry.second; }
-        return *this;
+    LinearExpr operator-() {
+        LinearExpr ret;
+        auto &cmap = ret.coeffmap();
+        for(auto entry: coeffmap_) { cmap[entry.first] = -entry.second; }
+        return ret;
     }
 
     LinearExpr& operator+=(const ModernGurobi::LinearExpr &other) {
@@ -130,7 +136,6 @@ public:
 
 private:
     friend class AffineConstraint;
-    LinearExpr() {}
     LinearExpr(VarPtr v, double d): coeffmap_{{v,d}} {}
 
     friend LinearExpr operator+(LinearExpr x, const LinearExpr& y);
