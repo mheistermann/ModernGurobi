@@ -31,7 +31,7 @@
 namespace ModernGurobi {
 
 extern "C" {
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 }
 
 
@@ -331,6 +331,6 @@ private:
 };
 
 
-} // namespace
+} // namespace ModernGurobi
 
 #endif // MODERNGUROBI_HH

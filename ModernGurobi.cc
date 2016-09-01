@@ -95,4 +95,4 @@ void AffineConstraint::add_to_model(GRBmodel *model) const {
     }
 }
 
-} // namespace
+} // namespace ModernGurobi
