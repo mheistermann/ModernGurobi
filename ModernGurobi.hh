@@ -69,20 +69,23 @@ void throw_if_err(
 class Env
 {
 public:
-    explicit Env(const std::string &logfilename = "gurobi.log") {
-        int error = GRBloadenv(&env_, logfilename.c_str());
-        if (error || env_ == nullptr) {
-          throw GurobiException("GRBEnv::GRBEnv():  GRBloadenv failed", error);
-        }
+    explicit Env(const std::string &logfilename = "") {
+        EXCEPTWRAP(GRBloadenv(&env_, logfilename.c_str()));
+        assert(env_ != nullptr);
     }
     ~Env() {
         GRBfreeenv(env_);
     }
     Env(const Env &other) = delete;
     Env& operator=(const Env &other) = delete;
-
 private:
     friend class Model;
+    GRBenv *env() {return env_;}
+    GRBmodel *newModel() const {
+        GRBmodel *model;
+        EXCEPTWRAP(GRBnewmodel(env_, &model, "modelname_dummy", 0, nullptr, nullptr, nullptr, nullptr, nullptr));
+        return model;
+    }
     GRBenv *env_;
 };
 
@@ -266,11 +269,10 @@ AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
 class Model
 {
 public:
-    explicit Model(const Env &env) {
-        int error = GRBnewmodel(env.env_, &model_, "modelname_dummy", 0, nullptr, nullptr, nullptr, nullptr, nullptr);
-        if (error || model_ == nullptr) {
-          throw GurobiException("GRBModel::GRBModel(): GRBnewmodel() failed", error);
-        }
+    explicit Model(const Env &env)
+        : model_(env.newModel())
+    {
+        assert(model_ != nullptr);
     }
     ~Model() {
         GRBfreemodel(model_);
