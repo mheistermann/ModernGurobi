@@ -62,6 +62,8 @@ AffineExpr operator*(double d, AffineExpr expr) {
 }
 
 AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y) {
+    //     xl + xc <= yl + yc
+    // <=> xl - yl <= yc - xc
     return AffineConstraint(x.getLinearPart()-y.getLinearPart(),
                             GRB_LESS_EQUAL,
                             y.getConstant() - x.getConstant());

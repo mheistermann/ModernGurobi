@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <map>
 #include <cassert>
+#include <iostream>
 
 namespace ModernGurobi {
 
@@ -49,6 +50,11 @@ public:
   int getErrorCode() const {return error_; }
 private:
   int error_;
+};
+
+class GurobiInfeasibleException : public GurobiException {
+public:
+    GurobiInfeasibleException() : GurobiException("Infeasible") {}
 };
 
 class Env
@@ -76,6 +82,10 @@ class Var
 public:
     Var(const Var &other) = delete;
     Var &operator=(const Var &other) = delete;
+
+    std::string to_string() {
+        return "v_" + std::to_string(idx_);
+    }
 
     double get() {
         if (!computed) {
@@ -112,6 +122,19 @@ public:
      */
     LinearExpr() {}
     static LinearExpr zero() { return LinearExpr(); }
+
+
+    std::string to_string() {
+        if (coeffmap_.empty()) {
+            return "0";
+        }
+        std::string ret = "";
+        for(auto &entry: coeffmap_) {
+            ret += " + " + std::to_string(entry.second) + " * " + entry.first->to_string();
+        }
+        return ret;
+    }
+
     LinearExpr& operator*=(double d) {
         for(auto entry: coeffmap_) { entry.second *=d; }
         return *this;
@@ -197,13 +220,16 @@ AffineExpr operator*(double d, AffineExpr expr);
 class Constraint {
 public:
     Constraint() {}
-protected:
-    friend class Model;
-    virtual void add_to_model(GRBmodel *model) const = 0;
 };
 
 class AffineConstraint: public Constraint {
+public:
+    std::string to_string() {
+        return expr_.to_string() + " " + sense_ + " " + std::to_string(rhs_);
+    }
+
 private:
+    friend class Model;
     friend AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
     friend AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
     friend AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
@@ -214,7 +240,7 @@ private:
           rhs_(rhs)
     {}
 
-    virtual void add_to_model(GRBmodel *model) const;
+    void add_to_model(GRBmodel *model) const;
 
     LinearExpr expr_;
     char sense_;
@@ -271,9 +297,10 @@ public:
         return addVar(0, 1, obj, GRB_BINARY, vname);
     }
 
-    void addConstraint(const Constraint &constr)
+    void addConstraint(const AffineConstraint &constr)
     {
         constr.add_to_model(model_);
+        affine_constrs_.emplace_back(constr);
     }
 
     void update() {
@@ -287,6 +314,10 @@ public:
         int error = GRBoptimize(model_);
         if (error) {
             throw GurobiException("GRBModel::optimize(): GRBoptimize() failed", error);
+        }
+        int status = getOptimStatus();
+        if (status == GRB_INFEASIBLE) {
+            throw GurobiInfeasibleException();
         }
         const std::vector<double> solution = getSolution();
         for (size_t i=0; i < vars_.size(); i++) {
@@ -313,6 +344,19 @@ public:
         return objval;
     }
 
+    void debugWhyInfeasible() {
+        int error = GRBcomputeIIS(model_);
+        if (error) { throw GurobiException("GRBModel::debugWhyInfeasible: GRBcomputeIIS() failed", error); }
+        for(size_t idx = 0; idx < affine_constrs_.size(); ++idx) {
+            int in_iis;
+            error = GRBgetintattrelement(model_, GRB_INT_ATTR_IIS_CONSTR, static_cast<int>(idx), &in_iis);
+            if (error) {throw GurobiException("GRBModel::debugWhyInfeasible: GRBgetintattrelement() failed", error);}
+            if (in_iis) {
+                std::cerr << "Constr in IIS: " << affine_constrs_[idx].to_string() << std::endl;
+            }
+        }
+    }
+
 private:
     const std::vector<double> &getSolution() {
         solution_.resize(vars_.size());
@@ -326,7 +370,7 @@ private:
     }
     GRBmodel *model_ = 0;
     std::vector<std::shared_ptr<Var>> vars_;
-    std::vector<Constraint> constrs_;
+    std::vector<AffineConstraint> affine_constrs_; // For debug, e.g. infeasible constraints
     std::vector<double> solution_;
 };
 
