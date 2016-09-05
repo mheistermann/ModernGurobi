@@ -355,6 +355,17 @@ public:
         }
     }
 
+    void setMIPGap(double gap) {
+        GRBenv *env = GRBgetenv(model_);
+        EXCEPTWRAP(GRBsetdblparam(env, GRB_DBL_PAR_MIPGAP, gap));
+    }
+
+    void setTimeLimitSeconds(const double limit) {
+        GRBenv *env = GRBgetenv(model_);
+        EXCEPTWRAP(GRBsetdblparam(env, GRB_DBL_PAR_TIMELIMIT, limit));
+    }
+
+
 private:
     const std::vector<double> &getSolution() {
         solution_.resize(vars_.size());
