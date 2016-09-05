@@ -225,8 +225,10 @@ public:
 class AffineConstraint: public Constraint {
 public:
     std::string to_string() {
-        return expr_.to_string() + " " + sense_ + " " + std::to_string(rhs_);
+        return name_ + ": " + expr_.to_string() + " " + sense_ + " " + std::to_string(rhs_);
     }
+    const std::string &get_name() const {return name_;}
+    void set_name(const std::string &name) {name_ = name;}
 
 private:
     friend class Model;
@@ -245,6 +247,7 @@ private:
     LinearExpr expr_;
     char sense_;
     double rhs_;
+    std::string name_;
 };
 
 AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
@@ -297,10 +300,11 @@ public:
         return addVar(0, 1, obj, GRB_BINARY, vname);
     }
 
-    void addConstraint(const AffineConstraint &constr)
+    void addConstraint(const AffineConstraint &constr, const std::string &name = "")
     {
         constr.add_to_model(model_);
         affine_constrs_.emplace_back(constr);
+        affine_constrs_.back().set_name(name);
     }
 
     void update() {
