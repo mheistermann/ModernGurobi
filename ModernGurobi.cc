@@ -83,14 +83,22 @@ void AffineConstraint::add_to_model(GRBmodel *model) const {
     std::vector<int> indices;
     std::vector<double> coeffs;
     const LinearExpr::CoeffMap &parts = expr_.coeffmap();
+    if (parts.empty()) {
+        // Avoid an "attempt to access an element in an empty container." if STL bounds checking is enabled.
+        // As we pass a size of 0, these values will never be read!
+        // however we can't just skip empty constraints, as they might be a contradiction,
+        // or even if not, it would mess up the equivalence of our and gurobi's constraint indices
+        indices.push_back(0);
+        coeffs.push_back(0);
+    }
     for(auto &entry: parts) {
         indices.push_back(static_cast<int>(entry.first->idx()));
         coeffs.push_back(entry.second);
     }
     int error = GRBaddconstr(model,
                              static_cast<int>(parts.size()),
-                             &indices[0],
-                             &coeffs[0],
+                             &indices.front(),
+                             &coeffs.front(),
                              sense_, rhs_, nullptr);
     if (error) {
         throw GurobiException("LinearConstraint::add_to_model(): GRBaddconstr() failed", error);
