@@ -57,6 +57,15 @@ public:
     GurobiInfeasibleException() : GurobiException("Infeasible") {}
 };
 
+void throw_if_err(
+        int error,
+        std::string msg,
+        std::string filename,
+        std::string function,
+        unsigned int lineno);
+
+#define EXCEPTWRAP(X) do {int error = X; if (error) {throw_if_err(error, #X, __FILE__, __PRETTY_FUNCTION__, __LINE__);}} while(0)
+
 class Env
 {
 public:
@@ -283,16 +292,13 @@ public:
         struct make_shared_enabler : public Var { make_shared_enabler(size_t idx) : Var(idx) {}};
         size_t idx = vars_.size();
         vars_.emplace_back(std::make_shared<make_shared_enabler>(idx));
-        int  error = GRBaddvar(model_,
+        EXCEPTWRAP(GRBaddvar(model_,
                   0,
                   nullptr,
                   nullptr,
                   obj, lb, ub,
                   vtype,
-                  vname.c_str());
-        if (error) {
-            throw GurobiException("GRBModel::addVar(): GRBaddvar() failed", error);
-        }
+                  vname.c_str()));
         return vars_.back();
     }
 
@@ -308,17 +314,11 @@ public:
     }
 
     void update() {
-         int error = GRBupdatemodel(model_);
-         if (error) {
-             throw GurobiException("GRBModel::update(): GRBupdatemodel() failed", error);
-         }
+         EXCEPTWRAP(GRBupdatemodel(model_));
     }
 
     void optimize() {
-        int error = GRBoptimize(model_);
-        if (error) {
-            throw GurobiException("GRBModel::optimize(): GRBoptimize() failed", error);
-        }
+        EXCEPTWRAP(GRBoptimize(model_));
         int status = getOptimStatus();
         if (status == GRB_INFEASIBLE) {
             throw GurobiInfeasibleException();
@@ -331,30 +331,22 @@ public:
 
     int getOptimStatus()  {
         int optimstatus;
-        int error = GRBgetintattr(model_, GRB_INT_ATTR_STATUS, &optimstatus);
-        if (error) {
-            throw GurobiException("GRBModel::getOptimStatus: GRBgetintattr(model, GRB_INT_ATTR_STATUS, &...) failed", error);
-        }
-        // TODO: translate error status to proper enum?
+        EXCEPTWRAP(GRBgetintattr(model_, GRB_INT_ATTR_STATUS, &optimstatus));
+        // TODO: translate optimization status to proper enum?
         return optimstatus;
     }
 
     double getObjective() {
         double objval;
-        int error = GRBgetdblattr(model_, GRB_DBL_ATTR_OBJVAL, &objval);
-        if (error) {
-            throw GurobiException("GRBModel::getObjective: GRBgetdblattr(model, GRB_DBL_ATTR_OBJVAL, &...) failed", error);
-        }
+        EXCEPTWRAP(GRBgetdblattr(model_, GRB_DBL_ATTR_OBJVAL, &objval));
         return objval;
     }
 
     void debugWhyInfeasible() {
-        int error = GRBcomputeIIS(model_);
-        if (error) { throw GurobiException("GRBModel::debugWhyInfeasible: GRBcomputeIIS() failed", error); }
+        EXCEPTWRAP(GRBcomputeIIS(model_));
         for(size_t idx = 0; idx < affine_constrs_.size(); ++idx) {
             int in_iis;
-            error = GRBgetintattrelement(model_, GRB_INT_ATTR_IIS_CONSTR, static_cast<int>(idx), &in_iis);
-            if (error) {throw GurobiException("GRBModel::debugWhyInfeasible: GRBgetintattrelement() failed", error);}
+            EXCEPTWRAP(GRBgetintattrelement(model_, GRB_INT_ATTR_IIS_CONSTR, static_cast<int>(idx), &in_iis));
             if (in_iis) {
                 std::cerr << "Constr in IIS: " << affine_constrs_[idx].to_string() << std::endl;
             }
@@ -364,12 +356,9 @@ public:
 private:
     const std::vector<double> &getSolution() {
         solution_.resize(vars_.size());
-        int error = GRBgetdblattrarray(model_, GRB_DBL_ATTR_X,
+        EXCEPTWRAP(GRBgetdblattrarray(model_, GRB_DBL_ATTR_X,
                                        0, static_cast<int>(vars_.size()),
-                                       &solution_[0]);
-        if (error) {
-            throw GurobiException("GRBModel::getSolution: GRBgetdblattrarray(model, GRB_DBL_ATTR_X, &...) failed", error);
-        }
+                                       &solution_[0]));
         return solution_;
     }
     GRBmodel *model_ = 0;

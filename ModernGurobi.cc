@@ -97,4 +97,50 @@ void AffineConstraint::add_to_model(GRBmodel *model) const {
     }
 }
 
+void throw_if_err(
+        int error,
+        std::string msg,
+        std::string filename,
+        std::string function,
+        unsigned int lineno) {
+    switch(error) {
+    case 0:
+        return; // no error, no exception!
+        // TODO: maybe return/raise specialized exceptions?
+#define _GRB_ERROR_CASE(ERR) case ERR: msg = msg + " (" + # ERR + ")"; break;
+        _GRB_ERROR_CASE(GRB_ERROR_OUT_OF_MEMORY)
+                _GRB_ERROR_CASE(GRB_ERROR_NULL_ARGUMENT)
+                _GRB_ERROR_CASE(GRB_ERROR_INVALID_ARGUMENT)
+                _GRB_ERROR_CASE(GRB_ERROR_UNKNOWN_ATTRIBUTE)
+                _GRB_ERROR_CASE(GRB_ERROR_DATA_NOT_AVAILABLE)
+                _GRB_ERROR_CASE(GRB_ERROR_INDEX_OUT_OF_RANGE)
+                _GRB_ERROR_CASE(GRB_ERROR_UNKNOWN_PARAMETER)
+                _GRB_ERROR_CASE(GRB_ERROR_VALUE_OUT_OF_RANGE)
+                _GRB_ERROR_CASE(GRB_ERROR_NO_LICENSE)
+                _GRB_ERROR_CASE(GRB_ERROR_SIZE_LIMIT_EXCEEDED)
+                _GRB_ERROR_CASE(GRB_ERROR_CALLBACK)
+                _GRB_ERROR_CASE(GRB_ERROR_FILE_READ)
+                _GRB_ERROR_CASE(GRB_ERROR_FILE_WRITE)
+                _GRB_ERROR_CASE(GRB_ERROR_NUMERIC)
+                _GRB_ERROR_CASE(GRB_ERROR_IIS_NOT_INFEASIBLE)
+                _GRB_ERROR_CASE(GRB_ERROR_NOT_FOR_MIP)
+                _GRB_ERROR_CASE(GRB_ERROR_OPTIMIZATION_IN_PROGRESS)
+                _GRB_ERROR_CASE(GRB_ERROR_DUPLICATES)
+                _GRB_ERROR_CASE(GRB_ERROR_NODEFILE)
+                _GRB_ERROR_CASE(GRB_ERROR_Q_NOT_PSD)
+                _GRB_ERROR_CASE(GRB_ERROR_QCP_EQUALITY_CONSTRAINT)
+                _GRB_ERROR_CASE(GRB_ERROR_NETWORK)
+                _GRB_ERROR_CASE(GRB_ERROR_JOB_REJECTED)
+                _GRB_ERROR_CASE(GRB_ERROR_NOT_SUPPORTED)
+                _GRB_ERROR_CASE(GRB_ERROR_EXCEED_2B_NONZEROS)
+                _GRB_ERROR_CASE(GRB_ERROR_INVALID_PIECEWISE_OBJ)
+                _GRB_ERROR_CASE(GRB_ERROR_UPDATEMODE_CHANGE)
+        #undef _GRB_ERROR_CASE
+            default: msg += "(unknown!)";
+    }
+
+    msg += " in function " + function + " in file " + filename + ":" + std::to_string(lineno);
+    throw GurobiException(msg, error);
+}
+
 } // namespace ModernGurobi
