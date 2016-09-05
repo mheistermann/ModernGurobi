@@ -120,7 +120,7 @@ public:
     LinearExpr operator-() {
         LinearExpr ret;
         auto &cmap = ret.coeffmap();
-        for(auto entry: coeffmap_) { cmap[entry.first] = -entry.second; }
+        for(auto &entry: coeffmap_) { cmap[entry.first] = -entry.second; }
         return ret;
     }
 

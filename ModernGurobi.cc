@@ -30,7 +30,7 @@ LinearExpr operator*(const LinearExpr &x, double d)
 {
     LinearExpr ret;
     LinearExpr::CoeffMap &cmap = ret.coeffmap();
-    for(auto entry: x.coeffmap()) {
+    for(auto& entry: x.coeffmap()) {
         cmap[entry.first] = d * entry.second;
     }
     return ret;
