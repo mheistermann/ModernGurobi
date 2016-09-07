@@ -28,6 +28,7 @@
 #include <map>
 #include <cassert>
 #include <iostream>
+#include <cmath>
 
 namespace ModernGurobi {
 
@@ -294,11 +295,12 @@ public:
      * @param vname     variable name (optional)
      * @return std::shared_ptr<GRBVar>
      */
-    VarPtr addVar(double lb, double ub, double obj, char vtype, std::string vname="")
+    VarPtr addVar(double lb, double ub, double obj, char vtype, const std::string &vname="")
     {
         struct make_shared_enabler : public Var { make_shared_enabler(size_t idx) : Var(idx) {}};
         size_t idx = vars_.size();
         vars_.emplace_back(std::make_shared<make_shared_enabler>(idx));
+        assert(std::isfinite(obj));
         EXCEPTWRAP(GRBaddvar(model_,
                   0,
                   nullptr,
