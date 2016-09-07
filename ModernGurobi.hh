@@ -99,7 +99,12 @@ public:
         return "v_" + std::to_string(idx_);
     }
 
-    double get() {
+    bool getBinary() const {
+         // TODO: is there a better way to get binary vars out?
+        return get() > 0.5;
+    }
+
+    double get() const {
         if (!computed) {
             throw GurobiException("GRBVar::get(): no value computed yet, maybe call GRBModel::optimize()?");
         }
