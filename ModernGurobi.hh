@@ -96,7 +96,7 @@ public:
     Var(const Var &other) = delete;
     Var &operator=(const Var &other) = delete;
 
-    std::string to_string() {
+    std::string to_string() const {
         return "v_" + std::to_string(idx_);
     }
 
@@ -142,7 +142,7 @@ public:
     static LinearExpr zero() { return LinearExpr(); }
 
 
-    std::string to_string() {
+    std::string to_string() const {
         if (coeffmap_.empty()) {
             return "0";
         }
@@ -158,7 +158,7 @@ public:
         return *this;
     }
 
-    LinearExpr operator-() {
+    LinearExpr operator-() const {
         LinearExpr ret;
         auto &cmap = ret.coeffmap();
         for(auto &entry: coeffmap_) { cmap[entry.first] = -entry.second; }
@@ -223,6 +223,7 @@ private:
     double &getConstant() {return constant_; }
     const LinearExpr &getLinearPart() const { return linPart_; }
     LinearExpr &getLinearPart() { return linPart_; }
+
     LinearExpr linPart_;
     double constant_;
 };
@@ -242,7 +243,7 @@ public:
 
 class AffineConstraint: public Constraint {
 public:
-    std::string to_string() {
+    std::string to_string() const {
         return name_ + ": " + expr_.to_string() + " " + sense_ + " " + std::to_string(rhs_);
     }
     const std::string &get_name() const {return name_;}
@@ -338,20 +339,20 @@ public:
         }
     }
 
-    int getOptimStatus()  {
+    int getOptimStatus() const {
         int optimstatus;
         EXCEPTWRAP(GRBgetintattr(model_, GRB_INT_ATTR_STATUS, &optimstatus));
         // TODO: translate optimization status to proper enum?
         return optimstatus;
     }
 
-    double getObjective() {
+    double getObjective() const {
         double objval;
         EXCEPTWRAP(GRBgetdblattr(model_, GRB_DBL_ATTR_OBJVAL, &objval));
         return objval;
     }
 
-    void debugWhyInfeasible() {
+    void debugWhyInfeasible() const {
         EXCEPTWRAP(GRBcomputeIIS(model_));
         for(size_t idx = 0; idx < affine_constrs_.size(); ++idx) {
             int in_iis;
@@ -381,7 +382,7 @@ private:
                                        &solution_[0]));
         return solution_;
     }
-    GRBmodel *model_ = 0;
+    mutable GRBmodel *model_ = 0;
     std::vector<std::shared_ptr<Var>> vars_;
     std::vector<AffineConstraint> affine_constrs_; // For debug, e.g. infeasible constraints
     std::vector<double> solution_;
