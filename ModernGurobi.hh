@@ -93,6 +93,7 @@ private:
 class Var
 {
 public:
+    ~Var() = default;
     Var(const Var &other) = delete;
     Var &operator=(const Var &other) = delete;
 
@@ -139,6 +140,10 @@ public:
      * @brief LinearExpr default constructor: value is 0
      */
     LinearExpr() {}
+    ~LinearExpr() = default;
+    LinearExpr(const LinearExpr &other) = default;
+    LinearExpr &operator=(const LinearExpr &other) = default;
+
     static LinearExpr zero() { return LinearExpr(); }
 
 
@@ -187,6 +192,7 @@ private:
     using CoeffMap = std::map<VarPtr, double>;
     const CoeffMap &coeffmap() const {return coeffmap_;}
     CoeffMap &coeffmap() {return coeffmap_;}
+
     CoeffMap coeffmap_;
 };
 
@@ -208,6 +214,9 @@ public:
         : linPart_(lin),
           constant_(0)
     {}
+    ~AffineExpr() = default;
+    AffineExpr(const AffineExpr &other) = default;
+    AffineExpr &operator=(const AffineExpr &other) = default;
 private:
     friend class AffineConstraint;
     friend AffineExpr operator+(AffineExpr x, const AffineExpr& y);
@@ -243,6 +252,10 @@ public:
 
 class AffineConstraint: public Constraint {
 public:
+    ~AffineConstraint() = default;
+    AffineConstraint(const AffineConstraint &other) = default;
+    AffineConstraint &operator=(const AffineConstraint &other) = default;
+
     std::string to_string() const {
         return name_ + ": " + expr_.to_string() + " " + sense_ + " " + std::to_string(rhs_);
     }
