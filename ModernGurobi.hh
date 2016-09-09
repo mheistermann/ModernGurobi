@@ -19,6 +19,7 @@
 #ifndef MODERNGUROBI_HH
 #define MODERNGUROBI_HH
 
+
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -31,11 +32,9 @@
 #include <cmath>
 
 namespace ModernGurobi {
-
 extern "C" {
-#include <gurobi_c.h>
+#include <gurobi_c.h> // NOLINT(build/include_order)
 }
-
 
 class Model;
 class AffineConstraint;
@@ -43,9 +42,9 @@ class AffineConstraint;
 class GurobiException : public std::runtime_error
 {
 public:
-  GurobiException(const std::string &msg, int error = 0)
+  explicit GurobiException(const std::string &msg, int error = 0)
       : std::runtime_error(msg), error_(error) {}
-  GurobiException(const char *msg, int error = 0)
+  explicit GurobiException(const char *msg, int error = 0)
       : std::runtime_error(msg), error_(error) {}
   const std::string getMessage() const { return std::string(what()) + ", error = " + std::to_string(error_); }
   int getErrorCode() const {return error_; }
@@ -114,7 +113,7 @@ public:
     }
 
 protected:
-    Var(size_t idx) : idx_(idx) {}
+    explicit Var(size_t idx) : idx_(idx) {}
 
 private:
     friend class Model;
@@ -135,7 +134,9 @@ using VarPtr = std::shared_ptr<Var>;
 
 class LinearExpr {
 public:
-    LinearExpr(VarPtr v): coeffmap_{{v, 1}} {}
+    LinearExpr(VarPtr v) // NOLINT(runtime/explicit)
+        : coeffmap_{{v, 1}}
+    {}
     /**
      * @brief LinearExpr default constructor: value is 0
      */
@@ -203,14 +204,14 @@ LinearExpr operator*(double d, const LinearExpr& x);
 
 class AffineExpr {
 public:
-    AffineExpr(double d)
+    AffineExpr(double d)       // NOLINT(runtime/explicit)
         : linPart_(LinearExpr::zero()),
           constant_(d)
     {}
-    AffineExpr(int i) // just for convenient auto-conversion
+    AffineExpr(int i)          // NOLINT(runtime/explicit)
         : AffineExpr(static_cast<double>(i))
     {}
-    AffineExpr(LinearExpr lin)
+    AffineExpr(LinearExpr lin) // NOLINT(runtime/explicit)
         : linPart_(lin),
           constant_(0)
     {}
