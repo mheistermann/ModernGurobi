@@ -30,6 +30,7 @@
 #include <cassert>
 #include <iostream>
 #include <cmath>
+#include <utility>
 
 namespace ModernGurobi {
 extern "C" {
