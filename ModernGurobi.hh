@@ -129,8 +129,35 @@ private:
     double solution_ = std::numeric_limits<double>::quiet_NaN();
 };
 
-using VarPtr = std::shared_ptr<Var>;
+/**
+ * @brief The VarPtr class
+ * Using std::shared_ptr<Var> directly as VarPtr and handing these out to clients
+ * to use in expressions is problematic, as shared_ptr implements == and <, returning
+ * bools as opposed to errors or the intended AffineConstraint.
+ *
+ * Wrap it to remove all non-needed access.
+ */
+class VarPtr
+{
+private:
+    using T = Var;
+    using Ptr = std::shared_ptr<T>;
+    Ptr ptr_;
+public:
+    VarPtr() {}
+    explicit VarPtr(Ptr &&ptr)
+        : ptr_(std::move(ptr))
+    {}
 
+    inline T* operator->() const { return ptr_.operator->(); }
+
+    /** Useful for std::map. */
+    struct ptr_lessthan {
+        bool operator()(const VarPtr &first, const VarPtr &second) {
+            return first.ptr_ < second.ptr_;
+        }
+    };
+};
 
 class LinearExpr {
 public:
@@ -190,7 +217,7 @@ private:
     friend LinearExpr operator*(const LinearExpr &x, double d);
     friend LinearExpr operator*(double d, const LinearExpr& x);
 
-    using CoeffMap = std::map<VarPtr, double>;
+    using CoeffMap = std::map<VarPtr, double, VarPtr::ptr_lessthan>;
     const CoeffMap &coeffmap() const {return coeffmap_;}
     CoeffMap &coeffmap() {return coeffmap_;}
 
@@ -287,6 +314,18 @@ AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
 AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
 AffineConstraint operator==(const AffineExpr &x, const AffineExpr &y);
 
+inline AffineConstraint operator<=(const VarPtr &x, const VarPtr &y) {
+    return LinearExpr(x) <= LinearExpr(y);
+}
+
+inline AffineConstraint operator==(const VarPtr &x, const VarPtr &y) {
+    return LinearExpr(x) == LinearExpr(y);
+}
+
+inline AffineConstraint operator>=(const VarPtr &x, const VarPtr &y) {
+    return LinearExpr(x) >= LinearExpr(y);
+}
+
 class Model
 {
 public:
@@ -308,7 +347,7 @@ public:
      * @param obj       objective coefficient
      * @param vtype     variable type
      * @param vname     variable name (optional)
-     * @return std::shared_ptr<GRBVar>
+     * @return a VarPtr to the newly added var
      */
     VarPtr addVar(double lb, double ub, double obj, char vtype, const std::string &vname="")
     {
@@ -397,7 +436,7 @@ private:
         return solution_;
     }
     mutable GRBmodel *model_ = 0;
-    std::vector<std::shared_ptr<Var>> vars_;
+    std::vector<VarPtr> vars_;
     std::vector<AffineConstraint> affine_constrs_; // For debug, e.g. infeasible constraints
     std::vector<double> solution_;
 };
