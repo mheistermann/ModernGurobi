@@ -97,7 +97,7 @@ public:
     Var &operator=(const Var &other) = delete;
 
     std::string to_string() const {
-        return "v_" + std::to_string(idx_);
+        return name_;
     }
 
     bool getBinary() const {
@@ -113,7 +113,7 @@ public:
     }
 
 protected:
-    explicit Var(size_t idx) : idx_(idx) {}
+    explicit Var(size_t idx, const std::string &name) : idx_(idx), name_(name) {}
 
 private:
     friend class Model;
@@ -125,6 +125,7 @@ private:
     size_t idx() const {return idx_;}
 
     size_t idx_ = -1;
+    std::string name_; // this is a bit wasteful, also stored in gurobi, but we need the model to access it
     bool computed = false;
     double solution_ = std::numeric_limits<double>::quiet_NaN();
 };
@@ -181,7 +182,11 @@ public:
         }
         std::string ret = "";
         for(auto &entry: coeffmap_) {
-            ret += " + " + std::to_string(entry.second) + " * " + entry.first->to_string();
+            ret += " + ";
+            if (entry.second != 1.0) {
+                ret += std::to_string(entry.second) + " * ";
+            }
+            ret += entry.first->to_string();
         }
         return ret;
     }
@@ -351,9 +356,13 @@ public:
      */
     VarPtr addVar(double lb, double ub, double obj, char vtype, const std::string &vname="")
     {
-        struct make_shared_enabler : public Var { make_shared_enabler(size_t idx) : Var(idx) {}};
+        struct make_shared_enabler : public Var { make_shared_enabler(size_t idx, const std::string &name) : Var(idx, name) {}};
         size_t idx = vars_.size();
-        vars_.emplace_back(std::make_shared<make_shared_enabler>(idx));
+        std::string name = vname;
+        if (name.empty()) {
+            name = std::string("v_" + idx);
+        }
+        vars_.emplace_back(std::make_shared<make_shared_enabler>(idx, name));
         assert(std::isfinite(obj));
         EXCEPTWRAP(GRBaddvar(model_,
                   0,
@@ -361,7 +370,7 @@ public:
                   nullptr,
                   obj, lb, ub,
                   vtype,
-                  vname.c_str()));
+                  name.c_str()));
         return vars_.back();
     }
 
