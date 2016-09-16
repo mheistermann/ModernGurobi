@@ -361,7 +361,7 @@ public:
         size_t idx = vars_.size();
         std::string name = vname;
         if (name.empty()) {
-            name = std::string("v_" + idx);
+            name = std::string("v_") + std::to_string(idx);
         }
         vars_.emplace_back(std::make_shared<make_shared_enabler>(idx, name));
         assert(std::isfinite(obj));
