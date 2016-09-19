@@ -108,6 +108,7 @@ void AffineConstraint::add_to_model(GRBmodel *model) const {
 void throw_if_err(
         int error,
         std::string msg,
+        std::string extra,
         std::string filename,
         std::string function,
         unsigned int lineno) {
@@ -148,6 +149,9 @@ void throw_if_err(
     }
 
     msg += " in function " + function + " in file " + filename + ":" + std::to_string(lineno);
+    if (!extra.empty()) {
+        msg += std::string(" (") +  extra + ")";
+    }
     throw GurobiException(msg, error);
 }
 

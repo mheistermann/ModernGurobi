@@ -61,11 +61,19 @@ public:
 void throw_if_err(
         int error,
         std::string msg,
+        std::string extra,
         std::string filename,
         std::string function,
         unsigned int lineno);
 
-#define EXCEPTWRAP(X) do {int error = X; if (error) {throw_if_err(error, #X, __FILE__, __PRETTY_FUNCTION__, __LINE__);}} while(0)
+#define EXCEPTWRAP_EXTRA(CALL, EXTRA) do { \
+        int error = (CALL); \
+        if (error) { \
+            throw_if_err(error, #CALL, EXTRA, __FILE__, __PRETTY_FUNCTION__, __LINE__); \
+        } \
+    } while(0)
+
+#define EXCEPTWRAP(CALL) EXCEPTWRAP_EXTRA(CALL, "")
 
 class Env
 {
@@ -365,13 +373,18 @@ public:
         }
         vars_.emplace_back(std::make_shared<make_shared_enabler>(idx, name));
         assert(std::isfinite(obj));
-        EXCEPTWRAP(GRBaddvar(model_,
+        EXCEPTWRAP_EXTRA(GRBaddvar(model_,
                   0,
                   nullptr,
                   nullptr,
                   obj, lb, ub,
                   vtype,
-                  name.c_str()));
+                  name.c_str()),
+                  (std::string("lb = ") + std::to_string(lb)
+                   + ", ub = " + std::to_string(ub)
+                   + ", obj = " + std::to_string(obj)
+                   + ", name = " + vname
+                   ));
         return vars_.back();
     }
 
