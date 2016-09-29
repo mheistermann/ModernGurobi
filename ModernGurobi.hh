@@ -269,7 +269,7 @@ private:
     friend AffineExpr operator+(AffineExpr x, const AffineExpr& y);
     friend AffineExpr operator-(AffineExpr x, const AffineExpr& y);
     friend AffineExpr operator*(AffineExpr expr, double d);
-    friend AffineExpr operator*(double d, AffineExpr expr);
+    friend AffineExpr operator*(double d, const AffineExpr &expr);
 
     friend AffineConstraint operator<=(const AffineExpr &x, const AffineExpr &y);
     friend AffineConstraint operator>=(const AffineExpr &x, const AffineExpr &y);
@@ -287,7 +287,7 @@ private:
 AffineExpr operator+(AffineExpr x, const AffineExpr& y);
 AffineExpr operator-(AffineExpr x, const AffineExpr& y);
 AffineExpr operator*(AffineExpr expr, double d);
-AffineExpr operator*(double d, AffineExpr expr);
+AffineExpr operator*(double d, const AffineExpr &expr);
 
 
 
@@ -393,7 +393,7 @@ public:
         return vars_.back();
     }
 
-    VarPtr addBinaryVar(double obj, std::string vname="") {
+    VarPtr addBinaryVar(double obj, const std::string &vname="") {
         return addVar(0, 1, obj, GRB_BINARY, vname);
     }
 
@@ -511,7 +511,7 @@ inline AffineExpr operator*(AffineExpr expr, double d) {
     return expr;
 }
 
-inline AffineExpr operator*(double d, AffineExpr expr) {
+inline AffineExpr operator*(double d, const AffineExpr &expr) {
     return expr * d;
 }
 
