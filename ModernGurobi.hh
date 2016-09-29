@@ -66,10 +66,15 @@ void throw_if_err(
         std::string function,
         unsigned int lineno);
 
+#ifdef _MSC_VER
+#  define PRETTY_FUNC __FUNCSIG__
+#else
+#  define PRETTY_FUNC __PRETTY_FUNCTION__
+#endif
 #define EXCEPTWRAP_EXTRA(CALL, EXTRA) do { \
         int error = (CALL); \
         if (error) { \
-            throw_if_err(error, #CALL, EXTRA, __FILE__, __PRETTY_FUNCTION__, __LINE__); \
+            throw_if_err(error, #CALL, EXTRA, __FILE__, PRETTY_FUNC, __LINE__); \
         } \
     } while(0)
 
@@ -163,7 +168,7 @@ public:
 
     /** Useful for std::map. */
     struct ptr_lessthan {
-        bool operator()(const VarPtr &first, const VarPtr &second) {
+        bool operator()(const VarPtr &first, const VarPtr &second) const {
             return first.ptr_ < second.ptr_;
         }
     };
