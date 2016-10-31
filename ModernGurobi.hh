@@ -176,6 +176,7 @@ public:
 
 class LinearExpr {
 public:
+    // cppcheck-suppress noExplicitConstructor
     LinearExpr(VarPtr v) // NOLINT(runtime/explicit)
         : coeffmap_{{v, 1}}
     {}
@@ -250,13 +251,16 @@ LinearExpr operator*(double d, const LinearExpr& x);
 
 class AffineExpr {
 public:
+    // cppcheck-suppress noExplicitConstructor
     AffineExpr(double d)       // NOLINT(runtime/explicit)
         : linPart_(LinearExpr::zero()),
           constant_(d)
     {}
+    // cppcheck-suppress noExplicitConstructor
     AffineExpr(int i)          // NOLINT(runtime/explicit)
         : AffineExpr(static_cast<double>(i))
     {}
+    // cppcheck-suppress noExplicitConstructor
     AffineExpr(LinearExpr lin) // NOLINT(runtime/explicit)
         : linPart_(lin),
           constant_(0)
