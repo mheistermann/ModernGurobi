@@ -562,9 +562,9 @@ inline void AffineConstraint::add_to_model(GRBmodel *model) const {
 inline void throw_if_err(
         int error,
         std::string msg,
-        std::string extra,
-        std::string filename,
-        std::string function,
+        const std::string &extra,
+        const std::string &filename,
+        const std::string &function,
         unsigned int lineno) {
     switch(error) {
     case 0:
